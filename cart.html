@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart | MyBasket</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold text-success" href="shop.html">MyBasket</a>
+      <div class="ms-auto">
+        <a href="shop.html" class="btn btn-outline-success me-2">Shop</a>
+        <a href="index.html" class="btn btn-outline-danger">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="text-success mb-4">🛒 Your Cart</h2>
+    <div id="cartItems"></div>
+
+    <div id="paymentSection" class="mt-4">
+      <h5>Select Payment Method:</h5>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentMethod" id="cod" value="COD" checked />
+        <label class="form-check-label" for="cod">Cash on Delivery (COD)</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentMethod" id="online" value="Online" />
+        <label class="form-check-label" for="online">Online Payment (Dummy)</label>
+      </div>
+      <button id="purchaseBtn" class="btn btn-success mt-3">Confirm Purchase</button>
+    </div>
+  </div>
+
+  <div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content text-center p-4">
+        <h5>Processing Payment...</h5>
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-2">Please wait...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Modal -->
+  <div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content text-center p-4">
+        <h5 class="mb-3">Scan to Pay</h5>
+        <img 
+          src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=upi://pay?pa=demo@upi&pn=MyBasket&am=100&cu=INR" 
+          id="qrImage"
+          class="img-fluid border rounded p-2"
+          style="cursor:pointer;"
+        />
+        <p class="mt-2 text-muted">Click QR after paying</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-success text-white text-center py-4 mt-auto">
+    <div class="container">
+      <h5 class="fw-bold">MyBasket</h5>
+      <p class="mb-1">Fresh groceries delivered to your door!</p>
+      <div class="d-flex justify-content-center gap-3 mb-2">
+        <a href="shop.html" class="text-white text-decoration-none">Shop</a> |
+        <a href="cart.html" class="text-white text-decoration-none">Cart</a> |
+        <a href="index.html" class="text-white text-decoration-none">Logout</a>
+      </div>
+      <small>📞 support@mybasket.com | 📍 Pune, India</small>
+      <hr class="bg-light" />
+      <p class="mb-0">Created by <strong>Me</strong></p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const cartContainer = document.getElementById("cartItems");
+    const purchaseBtn = document.getElementById("purchaseBtn");
+    const paymentModal = new bootstrap.Modal(document.getElementById("paymentModal"));
+    const qrModal = new bootstrap.Modal(document.getElementById("qrModal"));
+    const qrImage = document.getElementById("qrImage");
+
+    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+    function renderCart() {
+      cartContainer.innerHTML = "";
+
+      if (cart.length === 0) {
+        cartContainer.innerHTML = `<p class="text-muted">Your cart is empty.</p>`;
+        document.getElementById("paymentSection").style.display = "none";
+        return;
+      }
+
+      let totalPrice = 0;
+      let totalItems = 0;
+
+      const table = document.createElement("table");
+      table.className = "table table-bordered table-hover text-center";
+      table.innerHTML = `
+        <thead class="table-success">
+          <tr>
+            <th>Product</th>
+            <th>Price (₹)</th>
+            <th>Quantity</th>
+            <th>Subtotal (₹)</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector("tbody");
+
+      cart.forEach((item, index) => {
+        const subtotal = item.price * (item.quantity || 1);
+        totalPrice += subtotal;
+        totalItems += (item.quantity || 1);
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${item.name}</td>
+          <td>${item.price}</td>
+          <td>
+            <input type="number" min="1" value="${item.quantity || 1}" class="form-control w-50 mx-auto"
+                   onchange="updateQuantity(${index}, this.value)">
+          </td>
+          <td>${subtotal}</td>
+          <td>
+            <button class="btn btn-sm btn-danger" onclick="removeItem(${index})">Remove</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      const totalRow = document.createElement("tr");
+      totalRow.classList.add("table-light", "fw-bold");
+      totalRow.innerHTML = `
+        <td colspan="3" class="text-end">Total:</td>
+        <td colspan="2">₹${totalPrice.toFixed(2)} (${totalItems} items)</td>
+      `;
+      tbody.appendChild(totalRow);
+
+      cartContainer.appendChild(table);
+    }
+
+    function updateQuantity(index, value) {
+      const qty = parseInt(value);
+      if (qty <= 0) {
+        removeItem(index);
+      } else {
+        cart[index].quantity = qty;
+        localStorage.setItem("cart", JSON.stringify(cart));
+        renderCart();
+      }
+    }
+
+    function removeItem(index) {
+      cart.splice(index, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      renderCart();
+    }
+
+    purchaseBtn.addEventListener("click", () => {
+      const method = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+      if (method === "Online") {
+        qrModal.show(); // Show QR code first
+        return;
+      }
+
+      finalizePurchase();
+    });
+
+    // When user clicks QR after payment
+    qrImage.addEventListener("click", () => {
+      qrModal.hide();
+
+      alert("✅ Payment Received Successfully!");
+
+      paymentModal.show();
+      setTimeout(() => {
+        paymentModal.hide();
+        finalizePurchase();
+      }, 2000);
+    });
+
+    function finalizePurchase() {
+      alert("✅ Thank you for your purchase! Your order has been placed successfully.");
+      localStorage.removeItem("cart");
+      window.location.href = "shop.html";
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>

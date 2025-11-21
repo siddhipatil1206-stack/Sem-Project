@@ -1,0 +1,41 @@
+body {
+  background-color: #f9f9f9;
+}
+
+.navbar {
+  padding: 1rem;
+}
+
+.card img {
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.card {
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.login-page {
+  background: linear-gradient(120deg, #e3ffe7, #d9e7ff);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-container {
+  width: 350px;
+}
+
+.category-btn.active {
+  background-color: #198754;
+  color: white;
+}
+#viewCart{
+    width: 41%;
+}
